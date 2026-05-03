@@ -17,7 +17,23 @@ exports.createNote = async (req, res) => {
 // GET ALL
 exports.getAllNotes = async (req, res) => {
   try {
-    const notes = await Note.find().sort({ createdAt: -1 });
+    const {tag,q}=req.query;
+
+    let filter={};
+    
+    if(tag){
+        filter.tags=tag;
+    }
+    if(q){
+        filter.$or=[
+
+            {title: {$regex: q, $options: "i"}},
+            {content: {$regex: q, $options: "i"}}
+
+        ];
+    }
+
+    const notes = await Note.find(filter).sort({ createdAt: -1 });
     res.json(notes);
   } catch (err) {
     res.status(500).json({ error: err.message });
