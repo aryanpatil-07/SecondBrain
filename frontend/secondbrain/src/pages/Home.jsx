@@ -1,55 +1,97 @@
-import { useState,useEffect } from "react";
+import { useEffect, useState } from "react";
 import SearchBar from "../components/SearchBar";
+import TagFilter from "../components/TagFilter";
 import NoteCard from "../components/NoteCard";
-import { fetchNotes } from "../services/api";
-import TagFilter from "../components/TagFilter"
+import AddNote from "../components/AddNote";
+import { deleteNote, getNotes } from "../services/api";
 
-const Home=() => {
-    const[searchQuery,setSearchQuery]= useState("");
-    const [notes,setNotes]= useState([]);
-    const [selectedTag,setSelectedTag]= useState("");
+const Home = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTag, setSelectedTag] = useState("");
+  const [notes, setNotes] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+  useEffect(() => {
+    let cancelled = false;
 
-        const loadNotes= async() => {
-            const params= new URLSearchParams();
+    const loadNotes = async () => {
+      try {
+        setLoading(true);
+        const res = await getNotes({
+          q: searchQuery || undefined,
+          tag: selectedTag || undefined,
+        });
 
-        if(searchQuery){
-            params.append("q",searchQuery);
+        if (!cancelled) {
+          setNotes(Array.isArray(res) ? res : []);
         }
-        if(selectedTag){
-            params.append("tag",selectedTag);
+      } catch (error) {
+        console.error("Failed to load notes:", error);
+        if (!cancelled) {
+          setNotes([]);
         }
-        const query=`?${params.toString()}`;
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
 
-        const data= await fetchNotes(query);
-        setNotes(data);
-        }      
-    
+    loadNotes();
 
-        loadNotes();
-    }, [searchQuery,selectedTag]);
+    return () => {
+      cancelled = true;
+    };
+  }, [searchQuery, selectedTag]);
 
-    return(
-        <div>
-            <h1>My Notes</h1>
+  const handleCreated = (newNote) => {
+    setNotes((prev) => [newNote, ...prev]);
+  };
 
+  const handleDelete = async (id) => {
+    await deleteNote(id);
+    setNotes((prev) => prev.filter((note) => note._id !== id));
+  };
+
+  return (
+    <div className="page">
+      <div className="hero">
+        <h1>Second Brain</h1>
+        <p>Your clean, intelligent note workspace.</p>
+      </div>
+
+      <div className="layout">
+        <aside className="sidebar">
+          <AddNote onCreated={handleCreated} />
+        </aside>
+
+        <main className="content">
+          <div className="toolbar">
             <SearchBar
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}/>
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+            />
             <TagFilter
-                selectedTag={selectedTag}
-                setSelectedTag={setSelectedTag}/>
+              selectedTag={selectedTag}
+              setSelectedTag={setSelectedTag}
+            />
+          </div>
 
-            <div>
-                {notes.map((note) => (
-                    <NoteCard key={note._id} note={note}/>
-                ))}
+          {loading ? (
+            <div className="state-card">Loading notes...</div>
+          ) : !Array.isArray(notes) || notes.length === 0 ? (
+            <div className="state-card">No notes found.</div>
+          ) : (
+            <div className="notes-grid">
+              {notes.map((note) => (
+                <NoteCard key={note._id} note={note} onDelete={handleDelete} />
+              ))}
             </div>
-
-        </div>
-
-    );
+          )}
+        </main>
+      </div>
+    </div>
+  );
 };
 
 export default Home;

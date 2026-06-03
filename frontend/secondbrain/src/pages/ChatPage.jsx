@@ -1,57 +1,88 @@
 import { useEffect, useState } from "react";
 import { createChat, getChat, sendChatMessage } from "../services/api";
 
-export default function ChatPage() {
-  const [chatId, setChatId] = useState(() => localStorage.getItem("chatId") || null);
+const ChatPage = () => {
+  const [chatId, setChatId] = useState(localStorage.getItem("chatId") || "");
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!chatId) {
-      createChat().then(res => {
-        const id = res.data._id;
-        setChatId(id);
-        localStorage.setItem("chatId", id);
-        setMessages(res.data.messages || []);
-      }).catch(console.error);
-    } else {
-      getChat(chatId).then(res => setMessages(res.data.messages || [])).catch(console.error);
-    }
+    const initChat = async () => {
+      if (!chatId) {
+        const res = await createChat();
+        localStorage.setItem("chatId", res._id);
+        setChatId(res._id);
+        setMessages(res.messages || []);
+      } else {
+        const res = await getChat(chatId);
+        setMessages(res.messages || []);
+      }
+    };
+
+    initChat();
   }, [chatId]);
 
-  const send = async () => {
+  const handleSend = async () => {
     if (!input.trim() || !chatId) return;
-    const userMessage = { role: "user", content: input.trim() };
-    setMessages(prev => [...prev, userMessage]);
+
+    const userMessage = input.trim();
     setInput("");
     setLoading(true);
+
+    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+
     try {
-      const res = await sendChatMessage(chatId, input.trim());
-      const answer = res.data.answer;
-      setMessages(prev => [...prev, { role: "assistant", content: answer }]);
-    } catch (err) {
-      console.error(err);
-      // Optionally show error to user
+      const res = await sendChatMessage(chatId, userMessage);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: res.answer },
+      ]);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div>
-      <h2>Chat</h2>
-      <div style={{border:"1px solid #ddd", padding:12, height:400, overflow:"auto"}}>
-        {messages.map((m, i) => (
-          <div key={i} style={{margin:8}}>
-            <b>{m.role === "user" ? "You" : "Assistant"}:</b> {m.content}
-          </div>
-        ))}
+    <div className="page">
+      <div className="hero">
+        <h1>Chat</h1>
+        <p>Ask questions from your notes with conversation memory.</p>
       </div>
-      <div style={{marginTop:8}}>
-        <input value={input} onChange={e=>setInput(e.target.value)} placeholder="Ask something..." style={{width:"70%"}} />
-        <button onClick={send} disabled={loading}>Send</button>
+
+      <div className="chat-shell">
+        <div className="chat-window">
+          {messages.length === 0 ? (
+            <div className="state-card">Start a conversation.</div>
+          ) : (
+            messages.map((message, index) => (
+              <div
+                key={index}
+                className={
+                  message.role === "user" ? "message user" : "message assistant"
+                }
+              >
+                {message.content}
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="chat-input-row">
+          <input
+            type="text"
+            placeholder="Ask something..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          />
+          <button className="primary-button" onClick={handleSend} disabled={loading}>
+            {loading ? "Sending..." : "Send"}
+          </button>
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default ChatPage;
