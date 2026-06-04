@@ -83,8 +83,13 @@ const Home = () => {
             <div className="state-card">No notes found.</div>
           ) : (
             <div className="notes-grid">
-              {notes.map((note) => (
-                <NoteCard key={note._id} note={note} onDelete={handleDelete} />
+              {notes.map((note, index) => (
+                <NoteCard
+                  key={note._id}
+                  note={note}
+                  index={index}
+                  onDelete={handleDelete}
+                />
               ))}
             </div>
           )}

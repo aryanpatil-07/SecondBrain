@@ -20,7 +20,7 @@ const AddNote = ({ onCreated }) => {
       tags: tagArray,
     });
 
-    onCreated?.(res.data);
+    onCreated?.(res);
 
     setTitle("");
     setContent("");
@@ -28,10 +28,15 @@ const AddNote = ({ onCreated }) => {
   };
 
   return (
-    <form className="note-form" onSubmit={handleSubmit}>
+    <form className="add-note-card" onSubmit={handleSubmit}>
+      <div className="add-note-header">
+        <h2>Add Note</h2>
+        <p>Capture ideas quickly.</p>
+      </div>
+
       <input
         type="text"
-        placeholder="Note title"
+        placeholder="Title"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         required
@@ -46,12 +51,12 @@ const AddNote = ({ onCreated }) => {
 
       <input
         type="text"
-        placeholder="Tags separated by commas"
+        placeholder="Tags, separated by commas"
         value={tags}
         onChange={(e) => setTags(e.target.value)}
       />
 
-      <button type="submit" className="primary-button">
+      <button type="submit" className="add-note-button">
         Add Note
       </button>
     </form>
