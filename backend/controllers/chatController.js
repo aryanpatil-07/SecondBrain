@@ -1,11 +1,15 @@
 const Chat = require("../models/Chat");
+const Note = require("../models/Note");
 const { askLLM, buildNotesContext } = require("../services/aiService");
 const { getRelevantNotes } = require("../services/retrievalService");
 
 const createChat = async (req, res) => {
   try {
+    const { noteId = null } = req.body || {};
+
     const chat = await Chat.create({
       messages: [],
+      noteId: noteId || null,
     });
 
     res.status(201).json(chat);
@@ -41,7 +45,7 @@ const getChat = async (req, res) => {
 const sendMessage = async (req, res) => {
   try {
     const { chatId } = req.params;
-    const { message } = req.body;
+    const { message, noteId } = req.body;
 
     if (!message || typeof message !== "string" || !message.trim()) {
       return res.status(400).json({
@@ -70,13 +74,25 @@ const sendMessage = async (req, res) => {
       .map((msg) => `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`)
       .join("\n");
 
-    // Retrieve relevant notes using your Phase 3 logic
-    const notes = await getRelevantNotes(message);
-
+    const selectedNoteId = noteId || chat.noteId || null;
     let notesContext = "";
 
-    if (notes.length > 0) {
-      notesContext = buildNotesContext(notes);
+    if (selectedNoteId) {
+      const selectedNote = await Note.findById(selectedNoteId);
+
+      if (selectedNote) {
+        notesContext = buildNotesContext([selectedNote]);
+        chat.noteId = selectedNote._id;
+      }
+    }
+
+    if (!notesContext) {
+      // Retrieve relevant notes using your Phase 3 logic
+      const notes = await getRelevantNotes(message);
+
+      if (notes.length > 0) {
+        notesContext = buildNotesContext(notes);
+      }
     }
 
     const prompt = `You are a personal knowledge assistant.

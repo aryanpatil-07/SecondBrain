@@ -7,9 +7,47 @@ const noteSchema = new mongoose.Schema({
     },
     content:{
         type:String,
-        required:true
+        default:""
     },
     tags:[String],
+    sourceType:{
+        type:String,
+        enum:["text","image"],
+        default:"text"
+    },
+    imagePath:{
+        type:String,
+        default:""
+    },
+    imageUrl:{
+        type:String,
+        default:""
+    },
+    originalFilename:{
+        type:String,
+        default:""
+    },
+    processingStatus:{
+        type:String,
+        enum:["pending","processed","needs_review"],
+        default:"processed"
+    },
+    ocrText:{
+        type:String,
+        default:""
+    },
+    ocrBlocks:{
+        type:Array,
+        default:[]
+    },
+    ocrConfidence:{
+        type:Number,
+        default:null
+    },
+    aiDraft:{
+        type:String,
+        default:""
+    },
     createdAt:{
         type:Date,
         default:Date.now

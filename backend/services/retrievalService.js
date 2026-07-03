@@ -47,6 +47,7 @@ const getRelevantNotes = async (question) => {
     $or: [
       { title: { $in: regexes } },
       { content: { $in: regexes } },
+      { ocrText: { $in: regexes } },
       { tags: { $in: regexes } },
     ],
   });
@@ -55,6 +56,7 @@ const getRelevantNotes = async (question) => {
     .map((note) => {
       const title = normalizeText(note.title);
       const content = normalizeText(note.content);
+      const ocrText = normalizeText(note.ocrText);
       const tags = Array.isArray(note.tags)
         ? note.tags.map((tag) => normalizeText(tag)).join(" ")
         : "";
@@ -64,6 +66,7 @@ const getRelevantNotes = async (question) => {
       for (const keyword of keywords) {
         if (title.includes(keyword)) score += 3;
         if (content.includes(keyword)) score += 2;
+        if (ocrText.includes(keyword)) score += 2;
         if (tags.includes(keyword)) score += 3;
       }
 

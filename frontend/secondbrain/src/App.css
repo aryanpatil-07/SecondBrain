@@ -326,6 +326,145 @@
   gap: 16px;
 }
 
+.notes-and-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 460px);
+  gap: 18px;
+  align-items: start;
+}
+
+.note-card {
+  cursor: pointer;
+  position: relative;
+}
+
+.note-card.selected {
+  outline: 2px solid rgba(255, 255, 255, 0.35);
+  transform: translateY(-2px);
+}
+
+.note-card-subtitle {
+  margin: 6px 0 0;
+  color: rgba(0, 0, 0, 0.68);
+  font-size: 0.78rem;
+}
+
+.attachment-badge {
+  align-self: flex-start;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.14);
+  color: rgba(0, 0, 0, 0.78);
+  font-size: 0.76rem;
+}
+
+.note-detail {
+  border: 1px solid var(--border);
+  background: rgba(21, 25, 34, 0.78);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 16px;
+}
+
+.note-detail.empty-state {
+  min-height: 520px;
+  align-content: start;
+}
+
+.note-detail-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.detail-kicker,
+.panel-label,
+.detail-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.note-detail-header h2 {
+  margin: 6px 0 8px;
+  font-size: 1.8rem;
+  line-height: 1.1;
+}
+
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.secondary-button,
+.ghost-button {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 12px 16px;
+  border-radius: 999px;
+}
+
+.secondary-button:hover,
+.ghost-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.note-detail-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.note-visual-panel,
+.note-text-panel,
+.draft-panel {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
+  padding: 14px;
+}
+
+.note-image {
+  width: 100%;
+  display: block;
+  border-radius: 16px;
+  margin-top: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.note-text-copy,
+.draft-copy {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: var(--text);
+  margin: 10px 0 0;
+}
+
+.note-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.note-action.danger {
+  background: rgba(239, 68, 68, 0.14);
+  color: #ffb4b4;
+  padding: 10px 14px;
+}
+
+@media (max-width: 1180px) {
+  .notes-and-detail {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 960px) {
   .notes-grid {
     grid-template-columns: 1fr;

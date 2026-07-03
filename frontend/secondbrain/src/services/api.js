@@ -1,12 +1,18 @@
-const API_BASE_URL = "http://localhost:3000";
+export const API_BASE_URL = "http://localhost:3000";
 
 const request = async (path, options = {}) => {
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+  const { headers: customHeaders, ...restOptions } = options;
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
+    headers: isFormData
+      ? {
+          ...(customHeaders || {}),
+        }
+      : {
+          "Content-Type": "application/json",
+          ...(customHeaders || {}),
+        },
+    ...restOptions,
   });
 
   const data = await response.json().catch(() => null);
@@ -40,9 +46,21 @@ export const createNote = (note) =>
     body: JSON.stringify(note),
   });
 
+export const createImageNote = (formData) =>
+  request("/notes/upload", {
+    method: "POST",
+    body: formData,
+  });
+
 export const deleteNote = (id) =>
   request(`/notes/${id}`, {
     method: "DELETE",
+  });
+
+export const updateNote = (id, note) =>
+  request(`/notes/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(note),
   });
 
 // AI
@@ -58,16 +76,23 @@ export const testRetrieval = (question) =>
     body: JSON.stringify({ question }),
   });
 
+export const askNoteAction = ({ noteId, mode }) =>
+  request("/api/ai/note-action", {
+    method: "POST",
+    body: JSON.stringify({ noteId, mode }),
+  });
+
 // Chat
-export const createChat = () =>
+export const createChat = (noteId = null) =>
   request("/api/chat/new", {
     method: "POST",
+    body: JSON.stringify({ noteId }),
   });
 
 export const getChat = (chatId) => request(`/api/chat/${chatId}`);
 
-export const sendChatMessage = (chatId, message) =>
+export const sendChatMessage = (chatId, message, noteId = null) =>
   request(`/api/chat/${chatId}`, {
     method: "POST",
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, noteId }),
   });

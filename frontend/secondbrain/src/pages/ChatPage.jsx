@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createChat, getChat, sendChatMessage } from "../services/api";
 
-const ChatPage = () => {
+const ChatPage = ({ selectedNote }) => {
   const [chatId, setChatId] = useState(localStorage.getItem("chatId") || "");
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -10,7 +10,7 @@ const ChatPage = () => {
   useEffect(() => {
     const initChat = async () => {
       if (!chatId) {
-        const res = await createChat();
+        const res = await createChat(selectedNote?._id || null);
         localStorage.setItem("chatId", res._id);
         setChatId(res._id);
         setMessages(res.messages || []);
@@ -21,7 +21,7 @@ const ChatPage = () => {
     };
 
     initChat();
-  }, [chatId]);
+  }, [chatId, selectedNote?._id]);
 
   const handleSend = async () => {
     if (!input.trim() || !chatId) return;
@@ -33,7 +33,7 @@ const ChatPage = () => {
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
 
     try {
-      const res = await sendChatMessage(chatId, userMessage);
+      const res = await sendChatMessage(chatId, userMessage, selectedNote?._id || null);
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: res.answer },
@@ -47,7 +47,11 @@ const ChatPage = () => {
     <div className="page">
       <div className="hero">
         <h1>Chat</h1>
-        <p>Ask questions from your notes with conversation memory.</p>
+        <p>
+          {selectedNote
+            ? `Chatting about: ${selectedNote.title}`
+            : "Ask questions from your notes with conversation memory."}
+        </p>
       </div>
 
       <div className="chat-shell">
