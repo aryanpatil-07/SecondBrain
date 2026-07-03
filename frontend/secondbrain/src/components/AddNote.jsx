@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { createNote } from "../services/api";
+import { createImageNote, createNote } from "../services/api";
 
 const AddNote = ({ onCreated }) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [tags, setTags] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -14,17 +16,33 @@ const AddNote = ({ onCreated }) => {
       .map((tag) => tag.trim())
       .filter(Boolean);
 
-    const res = await createNote({
-      title,
-      content,
-      tags: tagArray,
-    });
+    setSubmitting(true);
 
-    onCreated?.(res);
+    try {
+      const res = imageFile
+        ? await (async () => {
+            const formData = new FormData();
+            formData.append("title", title);
+            formData.append("content", content);
+            formData.append("tags", tagArray.join(","));
+            formData.append("image", imageFile);
+            return createImageNote(formData);
+          })()
+        : await createNote({
+            title,
+            content,
+            tags: tagArray,
+          });
 
-    setTitle("");
-    setContent("");
-    setTags("");
+      onCreated?.(res);
+
+      setTitle("");
+      setContent("");
+      setTags("");
+      setImageFile(null);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -56,8 +74,14 @@ const AddNote = ({ onCreated }) => {
         onChange={(e) => setTags(e.target.value)}
       />
 
-      <button type="submit" className="add-note-button">
-        Add Note
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+      />
+
+      <button type="submit" className="add-note-button" disabled={submitting}>
+        {submitting ? "Saving..." : imageFile ? "Upload Note Image" : "Add Note"}
       </button>
     </form>
   );

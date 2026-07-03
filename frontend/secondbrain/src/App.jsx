@@ -4,6 +4,7 @@ import ChatPage from "./pages/ChatPage";
 
 function App() {
   const [activePage, setActivePage] = useState("notes");
+  const [selectedNote, setSelectedNote] = useState(null);
 
   return (
     <div className="app-shell">
@@ -29,7 +30,15 @@ function App() {
         </nav>
       </header>
 
-      {activePage === "notes" ? <Home /> : <ChatPage />}
+      {activePage === "notes" ? (
+        <Home
+          selectedNote={selectedNote}
+          setSelectedNote={setSelectedNote}
+          openChat={() => setActivePage("chat")}
+        />
+      ) : (
+        <ChatPage selectedNote={selectedNote} />
+      )}
     </div>
   );
 }
