@@ -103,11 +103,32 @@ Before running the project, make sure you have:
 
 ## Environment variables
 
+### Backend
+
 Create a `.env` file inside `backend/`:
 
 ```env
-MONGODB_URI=your_mongodb_connection_string
 PORT=3000
+MONGODB_URI=your_mongodb_connection_string
+OPENROUTER_API_KEY=your_openrouter_api_key
+OPENROUTER_MODEL=meta-llama/llama-3.2-3b-instruct:free
+OPENROUTER_SITE_URL=http://localhost:3000
+OPENROUTER_APP_NAME=SecondBrain
+JWT_SECRET=your_secret_here
+```
+
+### Frontend
+
+Create a `.env` file inside `frontend/secondbrain/`:
+
+```env
+VITE_API_BASE_URL=http://localhost:3000
+```
+
+For production, set:
+
+```env
+VITE_API_BASE_URL=https://secondbrain-pi02.onrender.com
 ```
 
 ## Setup
@@ -288,6 +309,29 @@ flowchart TD
     style E fill:#111827,color:#fff
     style G fill:#dc2626,color:#fff
 ```
+
+## Deployment
+
+### Frontend (Vercel)
+- **Link**: https://secondbrain-frontend-eight.vercel.app
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+- **Root Directory**: `frontend/secondbrain`
+- **Environment Variables**: `VITE_API_BASE_URL=https://secondbrain-pi02.onrender.com`
+
+### Backend (Render)
+- **Link**: https://secondbrain-pi02.onrender.com
+- **Build Command**: (leave empty)
+- **Start Command**: `npm start`
+- **Root Directory**: `backend`
+- **Environment Variables**: 
+  - `MONGODB_URI`
+  - `OPENROUTER_API_KEY`
+  - `OPENROUTER_MODEL`
+  - `OPENROUTER_SITE_URL`
+  - `OPENROUTER_APP_NAME`
+  - `JWT_SECRET`
+  - `PORT=3000`
 
 ## Future plans
 
