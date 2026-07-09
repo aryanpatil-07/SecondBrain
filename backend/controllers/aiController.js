@@ -1,6 +1,7 @@
 const Note = require("../models/Note");
 const { askLLM, buildNotesContext } = require("../services/aiService");
 const { getRelevantNotes } = require("../services/retrievalService");
+const { analyzeLearningPath } = require("../services/analysisService");
 
 const buildNoteActionPrompt = (note, mode) => {
   const baseContext = `Title: ${note.title || "Untitled"}\n\nTags: ${(note.tags || []).join(", ") || "none"}\n\nCurrent Digital Note:\n${note.content || note.ocrText || "No text extracted."}`;
@@ -130,8 +131,46 @@ const noteAction = async (req, res) => {
   }
 };
 
+const getLearningDiagnosis = async (req, res) => {
+  try {
+    const { tags } = req.body;
+
+    if (!tags || !Array.isArray(tags) || tags.length === 0) {
+      return res.status(400).json({ error: "tags array is required and must not be empty" });
+    }
+
+    // Fetch all notes with the specified tags
+    const allNotes = await Note.find({
+      tags: { $in: tags }
+    }).lean();
+
+    if (allNotes.length === 0) {
+      return res.status(404).json({ error: "No notes found with specified tags" });
+    }
+
+    // Run learning diagnosis
+    const diagnosis = await analyzeLearningPath(allNotes, tags);
+
+    if (!diagnosis) {
+      return res.status(500).json({ error: "Failed to generate learning diagnosis" });
+    }
+
+    res.json(diagnosis);
+  } catch (error) {
+    console.error("Learning diagnosis error:", error.response?.data || error.message);
+
+    res.status(500).json({
+      error:
+        error.response?.data?.error ||
+        error.message ||
+        "Failed to generate learning diagnosis",
+    });
+  }
+};
+
 module.exports = {
   askQuestion,
   testRetrieval,
   noteAction,
+  getLearningDiagnosis,
 };

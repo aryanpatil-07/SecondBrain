@@ -3,17 +3,29 @@ import Home from "./pages/Home";
 import ChatPage from "./pages/ChatPage";
 
 function App() {
-  const [activePage, setActivePage] = useState("notes");
+  const [activePage, setActivePage]     = useState("notes");
   const [selectedNote, setSelectedNote] = useState(null);
+  const [prefillTopic, setPrefillTopic] = useState("");
+
+  const openChat = () => {
+    setPrefillTopic("");
+    setActivePage("chat");
+  };
+
+  // Called from flowchart node click: switches to chat with a pre-filled question
+  const openChatWithTopic = (topicLabel, note) => {
+    setSelectedNote(note);
+    setPrefillTopic(`Explain "${topicLabel}" to me in the context of ${note.title}`);
+    setActivePage("chat");
+  };
 
   return (
     <div className="app-shell">
       <header className="topbar">
         <div>
           <div className="brand">Second Brain</div>
-          <p className="brand-subtitle">Notes, search, and chat in one clean workspace.</p>
+          <p className="brand-subtitle">Notes, search, and chat in one workspace.</p>
         </div>
-
         <nav className="nav">
           <button
             className={activePage === "notes" ? "nav-pill active" : "nav-pill"}
@@ -34,10 +46,15 @@ function App() {
         <Home
           selectedNote={selectedNote}
           setSelectedNote={setSelectedNote}
-          openChat={() => setActivePage("chat")}
+          openChat={openChat}
+          openChatWithTopic={openChatWithTopic}
         />
       ) : (
-        <ChatPage selectedNote={selectedNote} />
+        <ChatPage
+          selectedNote={selectedNote}
+          prefillTopic={prefillTopic}
+          onPrefillUsed={() => setPrefillTopic("")}
+        />
       )}
     </div>
   );
