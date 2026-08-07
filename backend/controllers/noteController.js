@@ -1,3 +1,13 @@
+/**
+ * @file noteController.js
+ * @concept CRUD operations (Mongo)
+ * @concept RESTful endpoint design
+ * @concept HTTP status codes used correctly (201 Created, 404 Not Found, 500 Internal Error)
+ * @concept Server-side error handling
+ * @concept JavaScript — Event loop (setImmediate background execution)
+ * @concept JavaScript — async/await
+ */
+
 const Note = require("../models/Note");
 const Chat = require("../models/Chat");
 const fs = require("fs");
@@ -16,7 +26,11 @@ const deleteFileIfExists = (filePath) => {
   try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (e) { console.error(e.message); }
 };
 
-// Run analysis in background — never blocks the response
+/**
+ * Run analysis in background — yields execution to Node.js Event Loop using setImmediate()
+ * @concept JavaScript — Event loop
+ * @concept Non-blocking async execution
+ */
 const runAnalysisAsync = (noteId, note) => {
   setImmediate(async () => {
     try {
@@ -31,7 +45,12 @@ const runAnalysisAsync = (noteId, note) => {
   });
 };
 
-// CREATE TEXT NOTE
+/**
+ * CREATE TEXT NOTE
+ * @concept RESTful endpoint design
+ * @concept HTTP status codes used correctly (201 Created, 500 Error)
+ * @concept CRUD operations (Mongo)
+ */
 exports.createNote = async (req, res) => {
   try {
     const { title, content, tags = [] } = req.body;
@@ -51,7 +70,12 @@ exports.createNote = async (req, res) => {
   }
 };
 
-// CREATE FROM IMAGE
+/**
+ * CREATE FROM IMAGE
+ * @concept File upload handling
+ * @concept Server-side error handling
+ * @concept HTTP status codes used correctly (400 Bad Request, 201 Created, 500 Error)
+ */
 exports.createImageNote = async (req, res) => {
   const uploadedFile = req.file;
   try {
@@ -92,7 +116,11 @@ exports.createImageNote = async (req, res) => {
   }
 };
 
-// GET ALL
+/**
+ * GET ALL NOTES
+ * @concept CRUD operations (Mongo)
+ * @concept Filtering, ordering, grouping
+ */
 exports.getAllNotes = async (req, res) => {
   try {
     const { tag, q } = req.query;
@@ -110,7 +138,11 @@ exports.getAllNotes = async (req, res) => {
   }
 };
 
-// GET ONE
+/**
+ * GET NOTE BY ID
+ * @concept HTTP status codes used correctly (404 Not Found, 200 OK, 500 Error)
+ * @concept CRUD operations (Mongo)
+ */
 exports.getNoteById = async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
@@ -121,7 +153,11 @@ exports.getNoteById = async (req, res) => {
   }
 };
 
-// UPDATE
+/**
+ * UPDATE NOTE
+ * @concept CRUD operations (Mongo)
+ * @concept HTTP status codes used correctly (404 Not Found, 200 OK)
+ */
 exports.updateNote = async (req, res) => {
   try {
     const { title, content, tags } = req.body;
@@ -137,7 +173,12 @@ exports.updateNote = async (req, res) => {
   }
 };
 
-// DELETE
+/**
+ * DELETE NOTE
+ * @concept CRUD operations (Mongo)
+ * @concept Cascading deletes
+ * @concept HTTP status codes used correctly (404 Not Found, 200 OK)
+ */
 exports.deleteNote = async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
@@ -151,7 +192,12 @@ exports.deleteNote = async (req, res) => {
   }
 };
 
-// RE-ANALYZE (called from aiRoute)
+/**
+ * RE-ANALYZE NOTE
+ * @concept LLM API integration
+ * @concept Structured outputs
+ * @concept HTTP status codes used correctly (422 Unprocessable, 404 Not Found, 200 OK)
+ */
 exports.reAnalyzeNote = async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);

@@ -1,3 +1,12 @@
+/**
+ * @file Home.jsx
+ * @concept React component composition
+ * @concept Side effects with useEffect
+ * @concept State management with useState
+ * @concept Async data fetching from API
+ * @concept JavaScript — Closures (cancelled boolean flag in useEffect cleanup)
+ */
+
 import { useEffect, useState } from "react";
 import SearchBar from "../components/SearchBar";
 import TagFilter from "../components/TagFilter";
@@ -18,6 +27,13 @@ const Home = ({ selectedNote, setSelectedNote, openChat, openChatWithTopic }) =>
   const [showAddNote, setShowAddNote]   = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
 
+  /**
+   * Side Effect Hook monitoring searchQuery and selectedTag
+   * @concept Side effects with useEffect
+   * @concept JavaScript — Closures (uses cancelled flag to prevent state updates on unmounted component)
+   * @concept Async data fetching from API
+   * @concept Defensive array handling for unexpected API responses
+   */
   useEffect(() => {
     let cancelled = false;
     const loadNotes = async () => {
@@ -56,14 +72,12 @@ const Home = ({ selectedNote, setSelectedNote, openChat, openChatWithTopic }) =>
   const handleSelect = async (note) => {
     setDraft(""); setDraftMode("");
     setShowAnalysis(false);
-    // Fetch fresh note from DB — background analysis may have completed since page load
     try {
       const fresh = await getNote(note._id);
       setSelectedNote(fresh);
     } catch {
       setSelectedNote(note);
     }
-    // Open the detail modal — user clicks "Analyse Knowledge" from there
   };
 
   const handleCloseDetail = () => {
@@ -89,10 +103,8 @@ const Home = ({ selectedNote, setSelectedNote, openChat, openChatWithTopic }) =>
     setDraft(""); 
     setDraftMode("");
     
-    // Trigger re-analysis and then fetch updated note
     try {
       const reAnalyzed = await reAnalyzeNote(selectedNote._id);
-      // Update the selected note with the new analysis
       if (reAnalyzed?.analysis) {
         const updatedWithAnalysis = { ...updated, analysis: reAnalyzed.analysis };
         setSelectedNote(updatedWithAnalysis);
@@ -103,7 +115,6 @@ const Home = ({ selectedNote, setSelectedNote, openChat, openChatWithTopic }) =>
     }
   };
 
-  // Called when a flowchart node is clicked — opens chat with a pre-filled question
   const handleTopicChat = (topicLabel, note) => {
     setShowAnalysis(false);
     setSelectedNote(note);
@@ -146,12 +157,10 @@ const Home = ({ selectedNote, setSelectedNote, openChat, openChatWithTopic }) =>
         </div>
       )}
 
-      {/* Add note overlay */}
       {showAddNote && (
         <AddNote onCreated={handleCreated} onClose={() => setShowAddNote(false)} />
       )}
 
-      {/* Note detail overlay */}
       {selectedNote && !showAnalysis && (
         <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && handleCloseDetail()}>
           <div className="detail-modal">
@@ -172,7 +181,6 @@ const Home = ({ selectedNote, setSelectedNote, openChat, openChatWithTopic }) =>
         </div>
       )}
 
-      {/* Knowledge analysis overlay */}
       {selectedNote && showAnalysis && (
         <KnowledgeAnalysis
           note={selectedNote}

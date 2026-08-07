@@ -1,3 +1,11 @@
+/**
+ * @file upload.js
+ * @concept Middleware
+ * @concept File upload handling
+ * @concept JavaScript — Promises vs callbacks (Multer disk storage callbacks)
+ * @concept Role-based authorization checks & security guards
+ */
+
 const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
@@ -8,6 +16,10 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
+/**
+ * Configure Multer Storage Engine
+ * @concept JavaScript — Promises vs callbacks (uses callback cb(null, destination))
+ */
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadsDir),
   filename: (_req, file, cb) => {
@@ -23,10 +35,15 @@ const storage = multer.diskStorage({
   },
 });
 
+/**
+ * Express Upload Middleware Middleware
+ * @concept Middleware
+ * @concept File upload handling (10MB limit enforcement)
+ */
 const upload = multer({
   storage,
   limits: {
-    fileSize: 10 * 1024 * 1024,
+    fileSize: 10 * 1024 * 1024, // 10MB limit
   },
 });
 

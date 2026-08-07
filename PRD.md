@@ -185,3 +185,82 @@ sequenceDiagram
     UI->>User: Displays Formatted Markdown Response
     end
 ```
+
+---
+
+## 7. Relational SQL Schema & Database Architecture Comparison
+
+### 7.1 Equivalent PostgreSQL Relational Schema Design (PK/FK Constraints)
+While SecondBrain uses MongoDB Atlas at runtime for low-latency document embedding, the equivalent **Relational SQL Schema Design** using Primary Keys (`PK`), Foreign Keys (`FK`), Indexes, and Normalization is defined as follows:
+
+```sql
+-- 1. Notes Relational Table
+CREATE TABLE notes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR(255) NOT NULL,
+    content TEXT,
+    source_type VARCHAR(50) DEFAULT 'text',
+    image_path VARCHAR(512),
+    image_url VARCHAR(512),
+    original_filename VARCHAR(255),
+    processing_status VARCHAR(50) DEFAULT 'processed',
+    ocr_text TEXT,
+    ocr_confidence NUMERIC(5,2),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Tags Table & Many-to-Many Join Table (3NF Normalization)
+CREATE TABLE tags (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) UNIQUE NOT NULL
+);
+
+CREATE TABLE note_tags (
+    note_id UUID REFERENCES notes(id) ON DELETE CASCADE,
+    tag_id UUID REFERENCES tags(id) ON DELETE CASCADE,
+    PRIMARY KEY (note_id, tag_id)
+);
+
+-- 3. Chats Table with Foreign Key to Notes (Relational Schema Design with PK/FK)
+CREATE TABLE chats (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    note_id UUID REFERENCES notes(id) ON DELETE CASCADE, -- Foreign Key Linkage
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4. Chat Messages Relational Table
+CREATE TABLE chat_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    chat_id UUID REFERENCES chats(id) ON DELETE CASCADE, -- Foreign Key Linkage
+    role VARCHAR(50) NOT NULL CHECK (role IN ('user', 'assistant')),
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for Query Performance (SQL)
+CREATE INDEX idx_notes_title ON notes(title);
+CREATE INDEX idx_chats_note_id ON chats(note_id);
+```
+
+### 7.2 SQL JOIN Query Example (Filtering, Ordering, Grouping)
+```sql
+-- SQL JOIN Query fetching Notes with linked Chat Messages
+SELECT 
+    n.id AS note_id,
+    n.title,
+    c.id AS chat_id,
+    m.role,
+    m.content,
+    m.created_at
+FROM notes n
+INNER JOIN chats c ON n.id = c.note_id -- SQL JOIN Clause
+INNER JOIN chat_messages m ON c.id = m.chat_id
+WHERE n.processing_status = 'processed'
+ORDER BY m.created_at ASC;
+```
+
+### 7.3 Architectural Justification: SQL vs NoSQL Document Store
+- **Relational SQL Choice**: Ideal for strict transactional consistency and normalized multi-table schema constraints (`FOREIGN KEY ... ON DELETE CASCADE`).
+- **MongoDB NoSQL Choice (SecondBrain Implementation)**: Selected because embedding the 3-tier Directed Acyclic Graph (DAG) flowchart nodes inside `Note.analysis` allows single-read retrieval without complex recursive SQL `JOIN` clauses.

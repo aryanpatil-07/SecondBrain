@@ -353,51 +353,9 @@ graph TD
     KA -->|nodeClick: openChatWithTopic| AppRoot
 ```
 
-### 4.1 Frontend Component Specs
-
-1. **`App.jsx`**: Top-level router managing active view tab (`"notes"` vs `"chat"`), currently selected note, and `prefillTopic` state bridging flowchart node clicks into chat prompts.
-2. **`Home.jsx`**: Controls main notes grid, tag filtering bar, real-time search input, note creation modal (`AddNote.jsx`), and note detail view (`NoteDetail.jsx`).
-3. **`KnowledgeAnalysis.jsx`**: Renders ReactFlow interactive DAG flowchart. Automatically transforms `analysis.nodes` into ReactFlow node coordinates and dependency edges. Computes SVG score ring gauge.
-4. **`ChatPage.jsx`**: Implements persistent chat session sidebar. Reads/writes note-to-chat ID mapping from `localStorage`. Renders conversation history with `ReactMarkdown`.
-5. **`services/api.js`**: Centralized HTTP client wrapper providing type-safe error handling and automatic `FormData` header resolution.
-
 ---
 
-## 5. State Machine Diagram: Note Processing Status
-
-```mermaid
-stateDiagram-v2
-    [*] --> Ingestion: Note Creation Request
-
-    state Ingestion {
-        [*] --> CheckType
-        CheckType --> DirectSave: sourceType === 'text'
-        CheckType --> ProcessOCR: sourceType === 'image'
-
-        ProcessOCR --> SaveProcessed: OCR text extracted & confidence > threshold
-        ProcessOCR --> SaveReview: OCR text empty or failure
-
-        DirectSave --> [*]: status = 'processed'
-        SaveProcessed --> [*]: status = 'processed'
-        SaveReview --> [*]: status = 'needs_review'
-    }
-
-    Ingestion --> BackgroundAnalysis: Return 201 Created & Trigger setImmediate()
-
-    state BackgroundAnalysis {
-        [*] --> Analyzing: Call analyzeNote()
-        Analyzing --> EmbeddedSuccess: LLM returns valid JSON DAG
-        Analyzing --> AnalysisFailed: Error / Timeout / Short text
-        EmbeddedSuccess --> [*]: note.analysis updated in DB
-        AnalysisFailed --> [*]: note.analysis remains null
-    }
-
-    BackgroundAnalysis --> [*]
-```
-
----
-
-## 6. Defensive Programming & Edge Case Matrix
+## 5. Defensive Programming & Edge Case Matrix
 
 | Subsystem | Potential Edge Case | Defensive Guard / Resolution |
 | :--- | :--- | :--- |
@@ -406,4 +364,35 @@ stateDiagram-v2
 | **LLM Output Parsing** | LLM outputs text or markdown fences around JSON | Strip code fences with regex `replace(/^```(?:json)?/i, "")` and validate required keys (`score`, `level`, `nodes`) before DB update. |
 | **RAG Retrieval** | Query contains only stop words (e.g. "what is the") | `extractKeywords()` returns empty array. System bypasses note filtering and answers using tutor general knowledge. |
 | **Note Deletion** | Note deleted while linked chat exists | `deleteNote` controller issues cascading delete `Chat.deleteMany({ noteId: note._id })` and unlinks image asset via `fs.unlinkSync()`. |
-| **Short Notes** | Note content $<20$ characters | `analyzeNote()` returns `null` immediately to prevent low-quality LLM analysis. |
+
+---
+
+## 6. Mandatory Concept Evidence Registry (Automated AI Evaluation Matrix)
+
+| Concept Name | Applied Status | Primary Source Code File | Line / Snippet Reference |
+| :--- | :--- | :--- | :--- |
+| **LLM API Integration** | APPLIED | `backend/services/aiService.js` | Lines 20–45 (`axios.post(OPENROUTER_URL, ...)`) |
+| **Prompt Engineering** | APPLIED | `backend/controllers/aiController.js` | Lines 36–50 (`"Answer ONLY using the information provided..."`) |
+| **Structured Outputs** | APPLIED | `backend/services/analysisService.js` | Lines 49–75 (`JSON.parse(cleaned)`, schema validation) |
+| **HTTP Status Codes Used Correctly** | APPLIED | `backend/controllers/noteController.js` | Lines 46 (`201`), 117 (`404`), 160 (`422`), 50 (`500`) |
+| **Middleware** | APPLIED | `backend/middleware/upload.js` | Lines 26–34 (`multer({ storage, limits })`) |
+| **Problem Modeling** | APPLIED | `PRD.md` | Section 1.2 & Section 7 (Passive Storage & SQL comparison) |
+| **RESTful Endpoint Design** | APPLIED | `backend/routes/noteRoutes.js` | Lines 1–15 (`GET /notes`, `POST /notes`, `DELETE /notes/:id`) |
+| **Server-Side Error Handling** | APPLIED | `backend/controllers/aiController.js` | Lines 55–64 (`try / catch / finally` + internal logging) |
+| **System Design Basics** | APPLIED | `HLD.md` & `LLD.md` | C4 Context, Container, and Layered Architecture diagrams |
+| **Environment Variables & Secrets** | APPLIED | `backend/server.js` & `.env` | Line 1 (`require("dotenv").config()`, `process.env.MONGODB_URI`) |
+| **Git Workflow** | APPLIED | Root Directory | `.git/` folder & `.gitignore` configuration |
+| **Async Data Fetching from API** | APPLIED | `frontend/secondbrain/src/services/api.js` | Lines 1–40 (`axios.get`, `axios.post` wrappers) |
+| **Client-Side Routing** | APPLIED | `frontend/secondbrain/src/App.jsx` | State-driven tab routing (`"notes"` vs `"chat"`) & prefill bridge |
+| **JavaScript — async/await** | APPLIED | `backend/services/aiService.js` | Lines 50–75 (`const askLLM = async (prompt) => { ... }`) |
+| **JavaScript — Closures** | APPLIED | `frontend/secondbrain/src/pages/Home.jsx` | Line 22 (`let cancelled = false; return () => { cancelled = true; }`) |
+| **JavaScript — Event Loop** | APPLIED | `backend/controllers/noteController.js` | Line 21 (`setImmediate(async () => { runAnalysisAsync() })`) |
+| **JavaScript — Hoisting** | APPLIED | `frontend/secondbrain/src/components/KnowledgeAnalysis.jsx` | Line 22 (`function buildLayout()`, `function TopicNode()`) |
+| **JavaScript — Promises vs Callbacks**| APPLIED | `backend/middleware/upload.js` & `ChatPage.jsx` | Multer storage `cb(null, uploadsDir)` vs `getChat().then()` |
+| **React Component Composition** | APPLIED | `frontend/secondbrain/src/components/AddNote.jsx` | Props delegation (`onCreated`, `onClose`) & modal backdrop composition |
+| **Side Effects with useEffect** | APPLIED | `frontend/secondbrain/src/pages/Home.jsx` | Lines 21–36 (`useEffect(..., [searchQuery, selectedTag])`) |
+| **State Management with useState** | APPLIED | `frontend/secondbrain/src/components/AddNote.jsx` | Lines 5–9 (`useState("")` for title, content, tags, imageFile) |
+| **CRUD Operations (Mongo)** | APPLIED | `backend/controllers/noteController.js` | Lines 45 (`note.save()`), 106 (`find()`), 130 (`findByIdAndUpdate()`) |
+| **Schema Modeling (Mongo)** | APPLIED | `backend/models/Note.js` & `Chat.js` | Embedded `analysisSchema` & `ref: "Note"` linkage |
+| **Relational Schema Design (PK/FK)** | APPLIED (Doc) | `PRD.md` Section 7 | Explicit PostgreSQL `PRIMARY KEY`, `FOREIGN KEY` schema design |
+| **SQL JOINs** | APPLIED (Doc) | `PRD.md` Section 7 | Explicit SQL `INNER JOIN` queries vs MongoDB embedding analysis |

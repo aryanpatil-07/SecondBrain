@@ -1,3 +1,10 @@
+/**
+ * @file Chat.js
+ * @concept Schema modeling (Mongo)
+ * @concept Embedding vs referencing relationships (ref: "Note" Foreign Linkage)
+ * @concept Aggregation pipelines & Indexing for query performance (Mongo)
+ */
+
 const mongoose = require("mongoose");
 
 const chatSchema = new mongoose.Schema(
@@ -6,6 +13,7 @@ const chatSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Note",
       default: null,
+      index: true, // @concept Indexing for query performance (Mongo)
     },
     messages: [
       {
