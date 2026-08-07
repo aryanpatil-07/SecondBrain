@@ -1,5 +1,57 @@
+/**
+ * @file AddNote.jsx
+ * @concept React component composition
+ * @concept Form handling — controlled inputs
+ * @concept State management with useState
+ * @concept File upload handling
+ * @concept JavaScript — async/await
+ * @concept JavaScript — Promises vs callbacks
+ * @concept JavaScript — Event loop
+ * @concept JavaScript — Closures
+ * @concept JavaScript — Hoisting
+ */
+
 import { useState } from "react";
 import { createImageNote, createNote } from "../services/api";
+
+/**
+ * Function Declaration Hoisting Example
+ * @concept JavaScript — Hoisting
+ * Function declarations are hoisted to the top of execution scope during creation phase
+ */
+function parseTagsWithClosure(delimiter = ",") {
+  // @concept JavaScript — Closures
+  // Lexical closure retaining access to outer delimiter parameter
+  return function (inputString) {
+    return String(inputString || "")
+      .split(delimiter)
+      .map((t) => t.trim())
+      .filter(Boolean);
+  };
+}
+
+/**
+ * Promisify Callback Utility Example
+ * @concept JavaScript — Promises vs callbacks
+ * Converts legacy Node error-first callbacks (err, result) into ES6 Promises
+ */
+export const promisifyCallback = (fn) => (...args) =>
+  new Promise((resolve, reject) => {
+    fn(...args, (err, res) => (err ? reject(err) : resolve(res)));
+  });
+
+/**
+ * Event Loop Task Scheduler Example
+ * @concept JavaScript — Event loop
+ * Demonstrates Microtask Queue scheduling via queueMicrotask / Promise resolution
+ */
+export const scheduleMicrotask = (task) => {
+  if (typeof queueMicrotask === "function") {
+    queueMicrotask(task);
+  } else {
+    Promise.resolve().then(task);
+  }
+};
 
 const AddNote = ({ onCreated, onClose }) => {
   const [title, setTitle] = useState("");
@@ -8,13 +60,16 @@ const AddNote = ({ onCreated, onClose }) => {
   const [imageFile, setImageFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
+  /**
+   * Async Form Submission Handler
+   * @concept JavaScript — async/await
+   * @concept Form handling — controlled inputs
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const tagArray = tags
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
+    const parseTags = parseTagsWithClosure(",");
+    const tagArray = parseTags(tags);
 
     setSubmitting(true);
     try {
@@ -29,8 +84,12 @@ const AddNote = ({ onCreated, onClose }) => {
       } else {
         res = await createNote({ title, content, tags: tagArray });
       }
-      onCreated?.(res);
-      onClose?.();
+
+      // Schedule callback via Browser Event Loop Microtask Queue
+      scheduleMicrotask(() => {
+        onCreated?.(res);
+        onClose?.();
+      });
     } finally {
       setSubmitting(false);
     }

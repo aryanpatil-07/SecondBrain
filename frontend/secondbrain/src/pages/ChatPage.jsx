@@ -3,6 +3,16 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { createChat, getChat, sendChatMessage } from "../services/api";
 
+/**
+ * @file ChatPage.jsx
+ * @concept Client-side routing
+ * @concept Side effects with useEffect
+ * @concept State management with useState
+ * @concept JavaScript — async/await
+ * @concept JavaScript — Promises vs callbacks (uses .then() promise chains for sidebar chat switching vs async/await for message sending)
+ * @concept JavaScript — Closures
+ */
+
 const ChatPage = ({ selectedNote, prefillTopic, onPrefillUsed }) => {
   const [chats, setChats]               = useState({}); // { noteId: chatId }
   const [noteTitles, setNoteTitles]     = useState({}); // { noteId: title }
