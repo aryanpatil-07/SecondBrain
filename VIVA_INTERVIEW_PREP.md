@@ -382,6 +382,127 @@ exports.createImageNote = async (req, res) => {
 
 ---
 
+## Q11 • Git Workflow (`README.md`, `.gitignore`)
+
+### Evaluator Feedback Breakdown
+- **Practice Prompt**: *How do you structure your Git workflow in this project, and how do you ensure sensitive credentials are never committed to version control?*
+
+### Repository Evidence & Implementation Details
+- **Files**: [README.md](file:///c:/Users/ADMIN/SecondBrain/README.md#L457-L466), [.gitignore](file:///c:/Users/ADMIN/SecondBrain/.gitignore)
+- **Workflow Highlights**:
+  - Main deployment branch (`main`) with feature branch workflow (`feature/*`).
+  - Semantic commit message convention (`feat:`, `fix:`, `docs:`, `refactor:`).
+  - Explicit `.gitignore` rules shielding sensitive environment files (`.env`), compiled assets (`dist/`), temporary uploads (`/uploads/*`), and dependencies (`node_modules/`).
+
+### 🎯 Model Answer for Viva
+> "In Second Brain, we follow a structured feature-branch Git workflow targeting `main`. We enforce semantic commit messages (`feat:`, `fix:`, `docs:`) for clear history traceability.
+> To protect credentials, our `.gitignore` file explicitly excludes `.env`, `node_modules/`, `/uploads/*`, and build artifacts (`dist/`). Environment variable templates are documented safely in `backend/.env.example` without exposing actual secrets."
+
+---
+
+## Q12 • Environment Variables & Secrets Management (`server.js`, `.env.example`)
+
+### Evaluator Feedback Breakdown
+- **Practice Prompt**: *How are secret keys and environment configurations managed across backend services, and how do you prevent hardcoding credentials in source code?*
+
+### Repository Evidence & Implementation Details
+- **Files**: [server.js](file:///c:/Users/ADMIN/SecondBrain/backend/server.js#L1), [.env.example](file:///c:/Users/ADMIN/SecondBrain/backend/.env.example)
+- **Key Concepts**:
+  - `dotenv` initialization at application entry point (`require("dotenv").config()`).
+  - `process.env.MONGODB_URI` and `process.env.OPENROUTER_API_KEY` dynamic loading.
+  - Secret template documentation via `.env.example`.
+
+### 🎯 Model Answer for Viva
+> "Environment variables are managed using `dotenv` in `backend/server.js` (line 1). Sensitive configuration keys like `MONGODB_URI` and `OPENROUTER_API_KEY` are loaded dynamically via `process.env`.
+> Secrets are stored exclusively in `backend/.env` which is excluded from version control, while public structural templates are checked into `backend/.env.example` to guide deployment setups safely."
+
+---
+
+## Q13 • JavaScript — Event Loop (`noteController.js`)
+
+### Evaluator Feedback Breakdown
+- **Practice Prompt**: *How does Node.js's event loop allow your application to perform non-blocking background AI analysis without stalling client HTTP responses?*
+
+### Repository Evidence & Implementation Details
+- **File**: [noteController.js](file:///c:/Users/ADMIN/SecondBrain/backend/controllers/noteController.js#L21-L32)
+- **Key Concepts**:
+  - `setImmediate()` queueing in the Event Loop Check phase.
+  - Non-blocking async execution returning HTTP `201 Created` in $<300\text{ ms}$.
+
+### 🎯 Model Answer for Viva
+> "In `noteController.js` (line 21), we use `setImmediate()` inside `runAnalysisAsync()`. In Node.js's event loop, `setImmediate()` registers a callback in the Check phase.
+> This allows `createNote()` to return an HTTP 201 response ($<300\text{ ms}$) immediately after saving to MongoDB, yielding execution back to the event loop so the 3–5 second LLM analysis runs asynchronously without blocking incoming HTTP requests."
+
+---
+
+## Q14 • JavaScript — Promises vs Callbacks (`upload.js` & `api.js`)
+
+### Evaluator Feedback Breakdown
+- **Practice Prompt**: *Where in your application do you use callbacks versus Promises/async-await, and why are Promises preferred for network requests?*
+
+### Repository Evidence & Implementation Details
+- **Files**: [upload.js](file:///c:/Users/ADMIN/SecondBrain/backend/middleware/upload.js#L18-L24), [api.js](file:///c:/Users/ADMIN/SecondBrain/frontend/secondbrain/src/services/api.js#L13-L20)
+- **Key Concepts**:
+  - Node error-first callback pattern in Multer disk storage (`cb(null, filename)`).
+  - ES6 Promises & `async/await` primitives for HTTP data fetching.
+
+### 🎯 Model Answer for Viva
+> "In `backend/middleware/upload.js`, Multer disk storage uses Node error-first callbacks `cb(null, filename)`. For modern API data fetching in `api.js`, we use ES6 Promises wrapped in `async/await` syntax.
+> Promises are preferred over nested callbacks because they eliminate 'callback hell', support structured `try/catch` error handling, and compose cleanly with async operations."
+
+---
+
+## Q15 • JavaScript — async/await (`api.js`)
+
+### Evaluator Feedback Breakdown
+- **Practice Prompt**: *How does `async/await` simplify asynchronous data fetching in `api.js` compared to traditional `.then()` promise chains?*
+
+### Repository Evidence & Implementation Details
+- **File**: [api.js](file:///c:/Users/ADMIN/SecondBrain/frontend/secondbrain/src/services/api.js#L13-L25)
+- **Key Concepts**:
+  - Syntactic sugar over Promises simplifying asynchronous code readability.
+  - Sequential execution pauses on `await fetch()` and `await response.json()`.
+
+### 🎯 Model Answer for Viva
+> "`async/await` provides clean, synchronous-looking syntax over ES6 Promises. In `api.js`, declaring `const request = async (path, options) => { ... }` allows us to pause execution on `await fetch(...)` and `await response.json()`.
+> This simplifies control flow, avoids deeply nested `.then()` chains, and permits unified error handling using standard `try/catch` blocks."
+
+---
+
+## Q16 • JavaScript — Closures (`Home.jsx`)
+
+### Evaluator Feedback Breakdown
+- **Practice Prompt**: *Can you give a specific example of a closure in `Home.jsx` and explain how it retains access to variables after its outer function has finished executing?*
+
+### Repository Evidence & Implementation Details
+- **File**: [Home.jsx](file:///c:/Users/ADMIN/SecondBrain/frontend/secondbrain/src/pages/Home.jsx#L22-L36)
+- **Key Concepts**:
+  - Lexical scoping & state variable preservation in React Hooks.
+  - Unmount cleanup closure over `cancelled` boolean variable.
+
+### 🎯 Model Answer for Viva
+> "In `Home.jsx` (line 22), the `useEffect` hook creates a closure: `let cancelled = false; return () => { cancelled = true; };`.
+> The cleanup function returned by `useEffect` forms a closure over `cancelled`. Even after `useEffect` finishes executing, the cleanup callback retains access to the lexically enclosed `cancelled` boolean variable, allowing it to mark the request as cancelled when `Home` unmounts."
+
+---
+
+## Q17 • JavaScript — Hoisting (`KnowledgeAnalysis.jsx`)
+
+### Evaluator Feedback Breakdown
+- **Practice Prompt**: *How does function declaration hoisting differ from `const`/`let` variable declarations in `KnowledgeAnalysis.jsx`?*
+
+### Repository Evidence & Implementation Details
+- **File**: [KnowledgeAnalysis.jsx](file:///c:/Users/ADMIN/SecondBrain/frontend/secondbrain/src/components/KnowledgeAnalysis.jsx#L22-L38)
+- **Key Concepts**:
+  - Function declaration hoisting to the top of execution scope phase.
+  - Block-scoped `const`/`let` declarations and Temporal Dead Zone (TDZ).
+
+### 🎯 Model Answer for Viva
+> "In `KnowledgeAnalysis.jsx` (line 22), function declarations like `function buildLayout(nodes)` and `function TopicNode()` are hoisted in their entirety to the top of the execution context during JS creation phase.
+> This allows them to be invoked anywhere within the file module. Conversely, variables declared with `const` or `let` (like `LEVEL_THEME`) are in the Temporal Dead Zone (TDZ) and cannot be accessed prior to their declaration line."
+
+---
+
 # Part 2: Extended Project Concept Reference (Concepts 11–34)
 
 | # | Concept Name | Weight | Primary File | Core Viva Concept & Key Takeaway |

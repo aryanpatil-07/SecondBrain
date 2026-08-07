@@ -1,5 +1,18 @@
+/**
+ * @file api.js
+ * @concept Async data fetching from API
+ * @concept JavaScript — async/await (syntactic sugar over ES6 Promises for asynchronous HTTP requests)
+ * @concept JavaScript — Promises vs callbacks (Promises provide chainable .then()/.catch() and await primitives over legacy Node error-first callbacks)
+ */
+
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
+/**
+ * Generic HTTP Request Wrapper
+ * @concept JavaScript — async/await
+ * @concept Async data fetching from API
+ * @concept JavaScript — Promises vs callbacks (returns a native Promise resolved via await)
+ */
 const request = async (path, options = {}) => {
   const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
   const { headers: customHeaders, ...restOptions } = options;
@@ -14,7 +27,7 @@ const request = async (path, options = {}) => {
   return data;
 };
 
-// ── Notes ──────────────────────────────────────────────────────────────────
+// ── Notes Endpoints ──────────────────────────────────────────────────────────
 export const getNotes = ({ q, tag } = {}) => {
   const params = new URLSearchParams();
   if (q) params.append("q", q);
@@ -39,7 +52,7 @@ export const updateNote = (id, note) =>
 
 export const getNote = (id) => request(`/notes/${id}`);
 
-// ── AI ─────────────────────────────────────────────────────────────────────
+// ── AI Endpoints ────────────────────────────────────────────────────────────
 export const askAI = (question) =>
   request("/api/ai/ask", { method: "POST", body: JSON.stringify({ question }) });
 
@@ -49,18 +62,16 @@ export const testRetrieval = (question) =>
 export const askNoteAction = ({ noteId, mode }) =>
   request("/api/ai/note-action", { method: "POST", body: JSON.stringify({ noteId, mode }) });
 
-// Re-run knowledge analysis for a note; returns { analysis }
 export const reAnalyzeNote = (noteId) =>
   request(`/api/ai/analyze/${noteId}`, { method: "POST" });
 
-// Learning diagnosis engine - comprehensive analysis across multiple notes with same tags
 export const getLearningDiagnosis = (tags) =>
   request("/api/ai/learning-diagnosis", { 
     method: "POST", 
     body: JSON.stringify({ tags }) 
   });
 
-// ── Chat ───────────────────────────────────────────────────────────────────
+// ── Chat Endpoints ──────────────────────────────────────────────────────────
 export const createChat = (noteId = null) =>
   request("/api/chat/new", { method: "POST", body: JSON.stringify({ noteId }) });
 

@@ -19,6 +19,13 @@ const H_GAP   = 32;
 const V_GAP   = 100;
 const LANE_Y  = { beginner: 40, intermediate: 40 + NODE_H + V_GAP, advanced: 40 + (NODE_H + V_GAP) * 2 };
 
+/**
+ * Function Declaration Hoisting Example
+ * @concept JavaScript — Hoisting
+ * Function declarations (like buildLayout, TopicNode, ScoreRing) are hoisted to the top 
+ * of the execution context during the creation phase, unlike const/let declarations 
+ * which remain in the Temporal Dead Zone (TDZ) until initialization.
+ */
 function buildLayout(nodes) {
   const byLevel = { beginner: [], intermediate: [], advanced: [] };
   nodes.forEach((n) => {

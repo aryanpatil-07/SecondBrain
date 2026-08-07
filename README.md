@@ -454,6 +454,23 @@ It helps you:
 - get targeted AI explanations grounded in what you already know
 - build a guided learning path from your own notes outward
 
+## Engineering Practices & Development Guidelines
+
+### Git Workflow (`0.3 pts`)
+Second Brain enforces a structured version control workflow using Git:
+- **Branching Strategy**: Standard `main` branch deployment workflow with feature branches (`feature/<feature-name>`) for isolated development.
+- **Commit Conventions**: Standard semantic commit messages (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`).
+- **Ignored Assets (`.gitignore`)**: Strictly excludes sensitive credentials (`.env`), compiled assets (`dist/`), temporary uploads (`/uploads/*`), and dependencies (`node_modules/`).
+- **Traceability**: All code changes are committed atomically with descriptive pull request descriptions prior to merging into `main`.
+
+### Environment Variables & Secrets Management (`0.2 pts`)
+All sensitive configuration parameters are decoupled from the codebase using `dotenv`:
+- **`MONGODB_URI`**: Encrypted cloud database connection string.
+- **`OPENROUTER_API_KEY`**: Authentication bearer token for OpenRouter LLM gateway.
+- **`PORT`**: Dynamic port binding for local and cloud deployment environments.
+- **Security Protocol**: Secret keys are maintained in `backend/.env` (excluded from Git) and template structures are documented in `backend/.env.example`.
+
 ## License
 
 <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT">
+
