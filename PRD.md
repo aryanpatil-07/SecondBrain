@@ -264,3 +264,801 @@ ORDER BY m.created_at ASC;
 ### 7.3 Architectural Justification: SQL vs NoSQL Document Store
 - **Relational SQL Choice**: Ideal for strict transactional consistency and normalized multi-table schema constraints (`FOREIGN KEY ... ON DELETE CASCADE`).
 - **MongoDB NoSQL Choice (SecondBrain Implementation)**: Selected because embedding the 3-tier Directed Acyclic Graph (DAG) flowchart nodes inside `Note.analysis` allows single-read retrieval without complex recursive SQL `JOIN` clauses.
+
+
+
+I analyzed the current repository documentation and the relevant implementation files. The existing README already has an **Engineering Practices** section, so the cleanest approach is to **append/expand the current PRD rather than rewrite the product requirements**.
+
+One important point: for an AI analyzer, merely mentioning a concept isn't enough. The PRD should explicitly connect each concept to **where it is implemented, why it is used, and what behavior demonstrates it**. For example, the repository already explicitly documents `setImmediate()` for non-blocking background analysis, and `aiService.js` uses `async/await`, environment variables, fallback logic, and async HTTP requests.
+
+The existing project documentation also already identifies the `.env` variables, Git workflow, AI services, controllers, and architecture.
+
+Below is the **add-on section** I recommend adding to the current PRD.
+
+# Second Brain — PRD Addendum
+
+## Engineering Practices & JavaScript Concepts Implementation
+
+> **Purpose of this addendum:**
+> This section extends the existing Second Brain PRD by explicitly documenting the engineering practices and JavaScript concepts implemented in the codebase. These concepts are not theoretical requirements; they are demonstrated through the application's backend, frontend, asynchronous AI pipeline, environment configuration, and Git-based development workflow.
+
+---
+
+# 1. Environment Variables & Secrets Management
+
+### Evaluation Weight: 0.2 pts
+
+### Category: Engineering Practices
+
+Second Brain separates application configuration and sensitive credentials from source code through environment variables.
+
+Sensitive configuration is loaded at runtime rather than hard-coded into application logic.
+
+### Backend environment configuration
+
+The backend uses environment variables for:
+
+* `MONGODB_URI` — MongoDB connection string
+* `OPENROUTER_API_KEY` — authentication credential for OpenRouter
+* `OPENROUTER_MODEL` — configurable primary LLM
+* `OPENROUTER_SITE_URL` — OpenRouter application URL/header configuration
+* `OPENROUTER_APP_NAME` — application identification
+* `PORT` — backend server port
+* `JWT_SECRET` — secret configuration for authentication-related functionality
+
+The application accesses these values using Node.js `process.env`.
+
+For example, the AI service obtains the OpenRouter API key at runtime:
+
+```javascript
+const apiKey = process.env.OPENROUTER_API_KEY;
+```
+
+It also uses environment variables to configure the selected LLM:
+
+```javascript
+const PRIMARY_OPENROUTER_MODEL =
+  process.env.OPENROUTER_MODEL ||
+  "meta-llama/llama-3.2-3b-instruct:free";
+```
+
+This means the codebase does not need to be modified when changing deployment-specific configuration.
+
+### Secret validation
+
+The AI service explicitly validates that the API key exists before making an external request:
+
+```javascript
+if (!apiKey) {
+  throw new Error("OPENROUTER_API_KEY is missing");
+}
+```
+
+This prevents the application from silently attempting an unauthenticated API request.
+
+### Frontend environment configuration
+
+The frontend uses:
+
+```env
+VITE_API_BASE_URL=http://localhost:3000
+```
+
+during local development and the production backend URL during deployment.
+
+This allows the same frontend code to operate against different backend environments without hard-coding the API endpoint.
+
+### Repository protection
+
+Environment files and generated/deployment-specific resources are excluded through `.gitignore`.
+
+The project therefore follows the principle:
+
+**Source code → reusable logic**
+**Environment variables → deployment-specific configuration**
+**Secrets → runtime configuration**
+
+### Why this is implemented
+
+The project demonstrates:
+
+* configuration externalization
+* secret separation
+* environment-specific deployment
+* runtime configuration
+* prevention of credentials being embedded directly in source code
+
+---
+
+# 2. Git Workflow
+
+### Evaluation Weight: 0.3 pts
+
+### Category: Engineering Practices
+
+Second Brain uses Git as the primary version-control system and follows a structured development workflow.
+
+The repository's `main` branch represents the stable integration/deployment branch.
+
+## Branching strategy
+
+New functionality is developed in isolated feature branches following the pattern:
+
+```text
+feature/<feature-name>
+```
+
+Examples:
+
+```text
+feature/ai-chat
+feature/knowledge-analysis
+feature/ocr-notes
+feature/retrieval-system
+```
+
+This prevents experimental or incomplete work from directly affecting the stable branch.
+
+## Development workflow
+
+The intended workflow is:
+
+```text
+main
+  ↓
+feature branch
+  ↓
+development
+  ↓
+commit
+  ↓
+pull request
+  ↓
+review
+  ↓
+merge
+  ↓
+main
+```
+
+## Commit organization
+
+Changes are organized using descriptive commit conventions such as:
+
+```text
+feat:
+fix:
+docs:
+refactor:
+test:
+```
+
+Examples:
+
+```text
+feat: add knowledge analysis
+fix: handle failed OCR processing
+refactor: improve retrieval scoring
+docs: update project architecture
+```
+
+This makes the repository history easier to understand and audit.
+
+## Pull requests
+
+Feature work is integrated into `main` through pull requests rather than directly mixing unrelated changes.
+
+Pull requests provide:
+
+* change isolation
+* reviewability
+* traceability
+* discussion around implementation decisions
+* safer integration into the deployment branch
+
+## `.gitignore` and repository hygiene
+
+The Git workflow also protects the repository from unnecessary or sensitive files.
+
+Excluded resources include:
+
+```text
+.env
+node_modules/
+dist/
+uploads/*
+```
+
+This prevents secrets, dependencies, generated frontend builds, and temporary uploaded files from becoming part of the source repository.
+
+## Implementation evidence
+
+The repository therefore demonstrates Git as more than simply a storage mechanism. It is used for:
+
+* branching
+* incremental development
+* change tracking
+* code review
+* controlled merging
+* repository hygiene
+
+---
+
+# 3. JavaScript — Async/Await
+
+### Evaluation Weight: 0.1 pts
+
+### Category: Frontend / JavaScript
+
+Second Brain extensively uses JavaScript `async/await` for operations that depend on asynchronous resources.
+
+These operations include:
+
+* MongoDB queries
+* MongoDB updates
+* HTTP requests to OpenRouter
+* OCR processing
+* AI analysis
+* chat operations
+* note creation/update/deletion
+* frontend API requests
+
+## Backend example
+
+The AI service defines asynchronous functions:
+
+```javascript
+const callOpenRouter = async (prompt, model) => {
+  ...
+  const response = await axios.post(...);
+  ...
+};
+```
+
+The `await` expression pauses the execution of that asynchronous function until the Promise resolves without blocking the Node.js process.
+
+The same pattern is used in note controllers:
+
+```javascript
+exports.createNote = async (req, res) => {
+  try {
+    ...
+    const saved = await note.save();
+    res.status(201).json(saved);
+    ...
+  } catch (err) {
+    ...
+  }
+};
+```
+
+## Why async/await is appropriate
+
+Database and network operations can take an unpredictable amount of time.
+
+Using `async/await` makes asynchronous control flow read similarly to synchronous code while preserving non-blocking execution.
+
+The general pattern is:
+
+```text
+Start asynchronous operation
+        ↓
+await Promise
+        ↓
+operation completes
+        ↓
+continue execution
+```
+
+This improves readability compared with deeply nested callbacks.
+
+## Error handling
+
+The project combines `async/await` with `try/catch`:
+
+```javascript
+try {
+  const answer = await callOpenRouter(prompt, model);
+} catch (error) {
+  ...
+}
+```
+
+This provides structured error handling for asynchronous operations.
+
+---
+
+# 4. JavaScript — Closures
+
+### Evaluation Weight: 0.1 pts
+
+### Category: Frontend / JavaScript
+
+Second Brain uses JavaScript's lexical scoping and closure behavior through functions that retain access to variables from their surrounding scope.
+
+A closure occurs when a function can access variables from its enclosing lexical scope even after the enclosing function's execution context would otherwise have finished.
+
+## Implementation pattern
+
+The application uses callback functions and nested functions extensively in:
+
+* asynchronous operations
+* array transformations
+* event handlers
+* API callbacks
+* React component callbacks
+* background processing
+
+For example, the asynchronous analysis function captures the values supplied to its outer function:
+
+```javascript
+const runAnalysisAsync = (noteId, note) => {
+  setImmediate(async () => {
+    const analysis = await analyzeNote(note);
+
+    if (analysis) {
+      await Note.findByIdAndUpdate(noteId, { analysis });
+    }
+  });
+};
+```
+
+The callback passed to `setImmediate()` retains access to:
+
+```text
+noteId
+note
+```
+
+from the surrounding `runAnalysisAsync()` scope.
+
+This is closure behavior.
+
+## Why closures are useful here
+
+The callback needs information from the original operation after control has returned to the Node.js event loop.
+
+Instead of storing these values globally, the function captures them through lexical scope.
+
+Conceptually:
+
+```text
+runAnalysisAsync(noteId, note)
+          ↓
+    creates callback
+          ↓
+callback remembers noteId + note
+          ↓
+Node.js executes callback later
+          ↓
+callback still has access to them
+```
+
+This provides localized state without introducing unnecessary global variables.
+
+---
+
+# 5. JavaScript — Event Loop
+
+### Evaluation Weight: 0.1 pts
+
+### Category: Frontend / JavaScript
+
+The Node.js backend uses the JavaScript event loop to perform non-blocking work.
+
+A particularly explicit implementation occurs during note analysis.
+
+## Background knowledge analysis
+
+When a note is created, the API first saves the note and responds to the client:
+
+```javascript
+const saved = await note.save();
+
+res.status(201).json(saved);
+
+runAnalysisAsync(saved._id, saved);
+```
+
+The analysis is then scheduled using:
+
+```javascript
+setImmediate(async () => {
+  ...
+});
+```
+
+This deliberately moves the expensive AI-analysis task out of the immediate request-response path.
+
+## Why this matters
+
+Knowledge analysis involves an external LLM request and therefore can take significantly longer than a normal database write.
+
+Without background scheduling:
+
+```text
+Create note
+    ↓
+Save note
+    ↓
+Call LLM
+    ↓
+Wait for LLM
+    ↓
+Save analysis
+    ↓
+Respond
+```
+
+The user would have to wait for the entire AI operation.
+
+With the implemented event-loop approach:
+
+```text
+Create note
+    ↓
+Save note
+    ↓
+Respond to user
+    ↓
+setImmediate()
+    ↓
+LLM analysis
+    ↓
+Save analysis
+```
+
+The user receives the created note immediately while the analysis continues asynchronously.
+
+This is an example of non-blocking server-side JavaScript execution.
+
+---
+
+# 6. JavaScript — Promises vs Callbacks
+
+### Evaluation Weight: 0.1 pts
+
+### Category: Frontend / JavaScript
+
+Second Brain demonstrates both callback-based asynchronous execution and Promise-based asynchronous execution, using each where appropriate.
+
+## Promises
+
+Operations such as Axios HTTP requests and Mongoose database operations return Promises.
+
+The project consumes these Promises using `async/await`.
+
+For example:
+
+```javascript
+const response = await axios.post(...);
+```
+
+and:
+
+```javascript
+const saved = await note.save();
+```
+
+Therefore:
+
+```text
+Promise-producing operation
+        ↓
+async/await
+        ↓
+result
+```
+
+## Callbacks
+
+Callbacks are used where JavaScript APIs require a function to be executed later.
+
+The most explicit example is:
+
+```javascript
+setImmediate(async () => {
+  ...
+});
+```
+
+The function passed to `setImmediate()` is a callback scheduled for later execution by Node.js.
+
+## Why not use callbacks everywhere?
+
+Traditional nested callbacks can create difficult-to-read structures:
+
+```text
+operation
+  → callback
+      → operation
+          → callback
+              → operation
+```
+
+The project instead uses Promises with `async/await` for most asynchronous application logic.
+
+Callbacks remain useful for event-loop scheduling and APIs specifically designed around callbacks.
+
+Therefore the project demonstrates the distinction:
+
+### Promise-based asynchronous operations
+
+Used for:
+
+* Axios requests
+* MongoDB/Mongoose operations
+* OCR/AI service operations
+
+### Callback-based scheduling
+
+Used for:
+
+* `setImmediate()`
+* deferred execution
+* event-loop scheduling
+
+---
+
+# 7. How These Concepts Work Together
+
+These JavaScript concepts are not isolated features. They work together as part of Second Brain's architecture.
+
+For example, creating a note demonstrates several concepts simultaneously:
+
+```text
+User creates note
+        ↓
+Express controller
+        ↓
+async createNote()
+        ↓
+await note.save()
+        ↓
+MongoDB Promise resolves
+        ↓
+HTTP response returned
+        ↓
+runAnalysisAsync()
+        ↓
+setImmediate(callback)
+        ↓
+JavaScript Event Loop
+        ↓
+callback retains noteId + note
+through Closure
+        ↓
+await analyzeNote(note)
+        ↓
+AI request
+        ↓
+Promise resolves
+        ↓
+await MongoDB update
+        ↓
+analysis stored
+```
+
+This single workflow demonstrates:
+
+* `async/await`
+* Promises
+* callbacks
+* closures
+* event-loop scheduling
+* non-blocking execution
+* error handling
+
+---
+
+# 8. AI Integration and Asynchronous Fallback Architecture
+
+The AI layer uses asynchronous HTTP requests to communicate with OpenRouter.
+
+The `aiService` defines a fallback chain of multiple models:
+
+```text
+Primary Model
+      ↓
+404 / 429?
+      ↓ yes
+Fallback Model 1
+      ↓
+404 / 429?
+      ↓ yes
+Fallback Model 2
+      ↓
+...
+```
+
+The implementation iterates through the configured model list and awaits each request.
+
+Retry/fallback occurs for specific retryable statuses:
+
+```text
+404 → fallback
+429 → fallback
+other error → throw error
+```
+
+This provides resilience without blindly retrying every failure.
+
+The AI layer also validates the prompt before starting the asynchronous request.
+
+```javascript
+if (!prompt || typeof prompt !== "string" || !prompt.trim()) {
+  throw new Error("Prompt is required!");
+}
+```
+
+This prevents invalid requests from entering the model pipeline.
+
+---
+
+# 9. Engineering Concepts Mapped to Project Components
+
+| Concept               | Implementation                                    | Purpose                                        |
+| --------------------- | ------------------------------------------------- | ---------------------------------------------- |
+| Environment variables | `process.env.*`, `.env`                           | Keep secrets/configuration outside source code |
+| Secrets management    | `OPENROUTER_API_KEY`, `MONGODB_URI`, `JWT_SECRET` | Protect credentials                            |
+| Git workflow          | feature branches → PR → main                      | Controlled development                         |
+| Git hygiene           | `.gitignore`                                      | Prevent secrets/build/dependency/upload files  |
+| Async/await           | Controllers, AI services, database operations     | Readable asynchronous programming              |
+| Promises              | Axios, Mongoose, service operations               | Handle asynchronous results                    |
+| Closures              | `runAnalysisAsync()` callback                     | Preserve local state for deferred execution    |
+| Event loop            | `setImmediate()`                                  | Non-blocking background analysis               |
+| Callbacks             | `setImmediate(async () => {})`                    | Schedule deferred work                         |
+| Error handling        | `try/catch`, API validation                       | Controlled failure behavior                    |
+| Async fallback        | OpenRouter model loop                             | Resilient AI requests                          |
+
+---
+
+# 10. Architectural Principle
+
+Second Brain follows an asynchronous, modular architecture where expensive operations are separated from the critical request-response path.
+
+The core principle is:
+
+> **Respond quickly to the user, then perform expensive AI processing asynchronously.**
+
+This is particularly important for:
+
+* OCR
+* LLM analysis
+* AI-powered note transformation
+* knowledge diagnosis
+* chat generation
+* external API communication
+
+The architecture therefore combines:
+
+```text
+React
+  ↓
+REST API
+  ↓
+Express Controllers
+  ↓
+Services
+  ├── MongoDB
+  ├── OCR
+  ├── Retrieval
+  └── OpenRouter
+```
+
+with JavaScript runtime mechanisms:
+
+```text
+Promises
+   +
+async/await
+   +
+callbacks
+   +
+closures
+   +
+event loop
+```
+
+This allows the application to remain responsive while performing computationally and network-intensive AI operations.
+
+---
+
+# 11. Requirements Traceability
+
+The following engineering evaluation requirements are explicitly implemented in the Second Brain codebase:
+
+### Environment Variables & Secrets Management — 0.2 pts
+
+**Implemented through:**
+
+* `.env` configuration
+* `process.env`
+* OpenRouter API-key isolation
+* MongoDB connection-string isolation
+* configurable LLM model
+* frontend API-base configuration
+* `.gitignore` protection
+
+### Git Workflow — 0.3 pts
+
+**Implemented through:**
+
+* `main` integration branch
+* feature branches
+* descriptive commits
+* pull-request based integration
+* `.gitignore`
+* traceable development history
+
+### JavaScript Async/Await — 0.1 pts
+
+**Implemented through:**
+
+* `async` Express controllers
+* `await` MongoDB operations
+* `await` Axios/OpenRouter requests
+* `await` AI analysis
+* `try/catch` asynchronous error handling
+
+### JavaScript Closures — 0.1 pts
+
+**Implemented through:**
+
+* deferred callbacks retaining lexical variables
+* `runAnalysisAsync(noteId, note)`
+* callback access to `noteId` and `note`
+
+### JavaScript Event Loop — 0.1 pts
+
+**Implemented through:**
+
+* `setImmediate()`
+* background knowledge analysis
+* non-blocking request-response behavior
+
+### JavaScript Promises vs Callbacks — 0.1 pts
+
+**Implemented through:**
+
+* Promise-based Axios/Mongoose operations
+* `async/await` consumption of Promises
+* callback-based `setImmediate()` scheduling
+* separation of Promise-driven application logic from callback-driven event-loop scheduling
+
+---
+
+# 12. Final Implementation Statement
+
+Second Brain is not only an AI-powered notes application; its implementation demonstrates practical JavaScript and software-engineering principles.
+
+The system combines secure configuration management, Git-based development, asynchronous programming, Promise-based APIs, callbacks, closures, and event-loop scheduling to support its AI functionality.
+
+These concepts directly contribute to the application's behavior rather than existing only as theoretical programming constructs.
+
+The most representative implementation is the note-analysis pipeline:
+
+```text
+Note Creation
+     ↓
+MongoDB save using Promise + async/await
+     ↓
+Immediate HTTP response
+     ↓
+setImmediate()
+     ↓
+Event Loop schedules background work
+     ↓
+Closure preserves note context
+     ↓
+AI analysis using async/await
+     ↓
+OpenRouter Promise
+     ↓
+Fallback models if required
+     ↓
+MongoDB analysis update
+```
+
+This architecture demonstrates how JavaScript language features and engineering practices are integrated into the actual Second Brain product workflow.
+
